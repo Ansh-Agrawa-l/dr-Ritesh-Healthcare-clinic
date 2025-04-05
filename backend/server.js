@@ -15,6 +15,13 @@ const appointmentRoutes = require('./routes/appointments');
 const medicineRoutes = require('./routes/medicines');
 const labTestRoutes = require('./routes/labTests');
 
+// Add detailed logging for environment variables
+console.log('Environment Variables:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not Set');
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+
 // Add error handling for uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
@@ -25,9 +32,6 @@ process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   process.exit(1);
 });
-
-// Connect to Database
-connectDB();
 
 // Initialize Express
 const app = express();
@@ -51,6 +55,25 @@ app.use((req, res, next) => {
   console.log(`Incoming ${req.method} request to ${req.url}`);
   next();
 });
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Connect to Database with retry logic
+const connectWithRetry = async () => {
+  try {
+    await connectDB();
+    console.log('MongoDB Connected Successfully');
+  } catch (err) {
+    console.error('MongoDB Connection Error:', err);
+    // Retry after 5 seconds
+    setTimeout(connectWithRetry, 5000);
+  }
+};
+
+connectWithRetry();
 
 // Serve static files from uploads directory with logging
 const uploadsPath = path.join(__dirname, 'uploads');
@@ -94,12 +117,13 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/lab-tests', labTestRoutes);
 
-// Error Handler Middleware (should be last)
+// Error Handler Middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -116,21 +140,5 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Start the server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('Frontend URL:', process.env.FRONTEND_URL);
-  console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not Set');
-  console.log('Available routes:');
-  console.log('- /api/auth');
-  console.log('- /api/doctors');
-  console.log('- /api/patients');
-  console.log('- /api/admin');
-  console.log('- /api/appointments');
-  console.log('- /api/medicines');
-  console.log('- /api/lab-tests');
-});
-
+// Export the Express API
 module.exports = app;
