@@ -15,6 +15,17 @@ const appointmentRoutes = require('./routes/appointments');
 const medicineRoutes = require('./routes/medicines');
 const labTestRoutes = require('./routes/labTests');
 
+// Add error handling for uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+  process.exit(1);
+});
+
 // Connect to Database
 connectDB();
 
@@ -34,6 +45,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization']
 }));
 app.use(morgan('dev'));
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`Incoming ${req.method} request to ${req.url}`);
+  next();
+});
 
 // Serve static files from uploads directory with logging
 const uploadsPath = path.join(__dirname, 'uploads');
@@ -78,7 +95,13 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/lab-tests', labTestRoutes);
 
 // Error Handler Middleware (should be last)
-app.use(errorMiddleware);
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
 
 // 404 handler
 app.use((req, res) => {
@@ -94,9 +117,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start the server
-const PORT = config.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Frontend URL:', process.env.FRONTEND_URL);
+  console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not Set');
   console.log('Available routes:');
   console.log('- /api/auth');
   console.log('- /api/doctors');
