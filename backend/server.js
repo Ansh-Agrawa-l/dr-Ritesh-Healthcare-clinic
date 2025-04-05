@@ -127,18 +127,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
+// Add a catch-all route handler
+app.all('*', (req, res) => {
+  console.log('Catch-all route hit:', req.method, req.url);
+  res.status(404).json({ 
+    message: 'Route not found',
+    requestedUrl: req.url,
+    method: req.method
   });
-}
+});
 
 // Export the Express API
 module.exports = app;
