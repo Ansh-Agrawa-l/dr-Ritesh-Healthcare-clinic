@@ -22,6 +22,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers'],
         },
       },
     },
@@ -33,5 +34,8 @@ export default defineConfig({
   },
   define: {
     'process.env': process.env,
+  },
+  optimizeDeps: {
+    include: ['@mui/x-date-pickers', 'date-fns'],
   },
 }) 
