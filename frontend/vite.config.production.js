@@ -24,7 +24,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          mui: ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-data-grid'],
+          mui: ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-data-grid', '@mui/lab'],
           toast: ['react-toastify'],
         },
       },
@@ -42,6 +42,7 @@ export default defineConfig({
     include: [
       '@mui/x-date-pickers',
       '@mui/x-data-grid',
+      '@mui/lab',
       'date-fns',
       '@mui/material',
       '@mui/icons-material',
