@@ -18,7 +18,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
@@ -36,6 +40,14 @@ export default defineConfig({
     'process.env': process.env,
   },
   optimizeDeps: {
-    include: ['@mui/x-date-pickers', 'date-fns'],
+    include: [
+      '@mui/x-date-pickers',
+      'date-fns',
+      '@mui/material',
+      '@mui/icons-material',
+      'react',
+      'react-dom',
+      'react-router-dom'
+    ],
   },
 }) 
