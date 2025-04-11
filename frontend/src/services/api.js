@@ -9,7 +9,31 @@ const api = axios.create({
     'X-Requested-With': 'XMLHttpRequest'
   },
   withCredentials: true,
-  timeout: 10000
+  timeout: 30000,
+  retry: 3,
+  retryDelay: 1000
+});
+
+// Add retry interceptor
+api.interceptors.response.use(null, async (error) => {
+  const { config, response } = error;
+  if (!config || !config.retry) {
+    return Promise.reject(error);
+  }
+
+  config.retryCount = config.retryCount || 0;
+
+  if (config.retryCount >= config.retry) {
+    return Promise.reject(error);
+  }
+
+  config.retryCount += 1;
+  const delayRetry = new Promise(resolve => {
+    setTimeout(resolve, config.retryDelay || 1000);
+  });
+
+  await delayRetry;
+  return api(config);
 });
 
 // Add a request interceptor
