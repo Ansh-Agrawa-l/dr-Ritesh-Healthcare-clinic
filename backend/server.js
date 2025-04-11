@@ -40,13 +40,13 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL,
+    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app',
     'http://localhost:5173',
-    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app'
+    'http://localhost:3000'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   exposedHeaders: ['x-auth-token']
 }));
 app.use(morgan('dev'));
