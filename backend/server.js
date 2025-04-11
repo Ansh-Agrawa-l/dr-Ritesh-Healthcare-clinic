@@ -42,11 +42,13 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL,
     'http://localhost:5173',
-    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app'
+    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app',
+    'https://dr-ritesh-healthcare-clinic.vercel.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization']
+  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
+  exposedHeaders: ['x-auth-token']
 }));
 app.use(morgan('dev'));
 
