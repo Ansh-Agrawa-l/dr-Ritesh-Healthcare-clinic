@@ -75,37 +75,55 @@ const connectWithRetry = async () => {
 
 connectWithRetry();
 
-// Serve static files from uploads directory with logging
-const uploadsPath = path.join(__dirname, 'uploads');
-console.log('Serving static files from:', uploadsPath);
+// Remove local file system handling
+// const uploadsPath = path.join(__dirname, 'uploads');
+// console.log('Serving static files from:', uploadsPath);
 
-// Check if uploads directory exists
-if (!fs.existsSync(uploadsPath)) {
-  console.log('Creating uploads directory...');
-  fs.mkdirSync(uploadsPath, { recursive: true });
-}
+// if (!fs.existsSync(uploadsPath)) {
+//   console.log('Creating uploads directory...');
+//   fs.mkdirSync(uploadsPath, { recursive: true });
+// }
 
 // Configure static file serving with detailed logging
-app.use('/uploads', express.static(uploadsPath, {
-  setHeaders: (res, filePath) => {
-    console.log('Serving file:', filePath);
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cache-Control', 'public, max-age=3600');
-    // Set content type based on file extension
-    const ext = path.extname(filePath).toLowerCase();
-    if (ext === '.jpg' || ext === '.jpeg') {
-      res.set('Content-Type', 'image/jpeg');
-    } else if (ext === '.png') {
-      res.set('Content-Type', 'image/png');
-    }
-  }
-}));
+// app.use('/uploads', express.static(uploadsPath, {
+//   setHeaders: (res, filePath) => {
+//     console.log('Serving file:', filePath);
+//     res.set('Access-Control-Allow-Origin', '*');
+//     res.set('Cache-Control', 'public, max-age=3600');
+//     // Set content type based on file extension
+//     const ext = path.extname(filePath).toLowerCase();
+//     if (ext === '.jpg' || ext === '.jpeg') {
+//       res.set('Content-Type', 'image/jpeg');
+//     } else if (ext === '.png') {
+//       res.set('Content-Type', 'image/png');
+//     }
+//   }
+// }));
 
 // Add error handling for static files
-app.use('/uploads', (err, req, res, next) => {
-  console.error('Error serving static file:', err);
-  console.error('Requested path:', req.path);
-  res.status(404).send('File not found');
+// app.use('/uploads', (err, req, res, next) => {
+//   console.error('Error serving static file:', err);
+//   console.error('Requested path:', req.path);
+//   res.status(404).send('File not found');
+// });
+
+// Add root path handler
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Healthcare Clinic API is running',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV
+  });
+});
+
+// Add health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
 });
 
 // Routes
@@ -127,13 +145,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Add a catch-all route handler
-app.all('*', (req, res) => {
-  console.log('Catch-all route hit:', req.method, req.url);
-  res.status(404).json({ 
-    message: 'Route not found',
-    requestedUrl: req.url,
-    method: req.method
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.url} not found`,
+    timestamp: new Date().toISOString()
   });
 });
 
