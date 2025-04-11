@@ -27,6 +27,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           mui: ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers'],
+          toast: ['react-toastify'],
         },
       },
     },
@@ -47,7 +48,8 @@ export default defineConfig({
       '@mui/icons-material',
       'react',
       'react-dom',
-      'react-router-dom'
+      'react-router-dom',
+      'react-toastify'
     ],
   },
 }) 
