@@ -40,16 +40,15 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: [
-    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app',
     'http://localhost:5173',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app',
+    'https://dr-ritesh-healthcare-clinic.vercel.app'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With'],
-  exposedHeaders: ['x-auth-token'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  exposedHeaders: ['x-auth-token']
 }));
 
 // Handle preflight requests

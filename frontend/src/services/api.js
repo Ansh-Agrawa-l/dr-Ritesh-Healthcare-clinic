@@ -6,37 +6,40 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
   },
   withCredentials: true,
-  timeout: 30000,
+  timeout: 60000, // Increased timeout to 60 seconds
   retry: 3,
-  retryDelay: 1000
+  retryDelay: 2000
 });
 
 // Add retry interceptor
 api.interceptors.response.use(null, async (error) => {
-  const { config, response } = error;
-  if (!config || !config.retry) {
-    return Promise.reject(error);
+  if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
+    const config = error.config;
+    if (!config || !config.retry) {
+      return Promise.reject(error);
+    }
+
+    config.retryCount = config.retryCount || 0;
+    if (config.retryCount >= config.retry) {
+      return Promise.reject(error);
+    }
+
+    config.retryCount += 1;
+    console.log(`Retrying request (${config.retryCount}/${config.retry})`);
+    
+    const delayRetry = new Promise(resolve => {
+      setTimeout(resolve, config.retryDelay || 2000);
+    });
+
+    await delayRetry;
+    return api(config);
   }
-
-  config.retryCount = config.retryCount || 0;
-
-  if (config.retryCount >= config.retry) {
-    return Promise.reject(error);
-  }
-
-  config.retryCount += 1;
-  const delayRetry = new Promise(resolve => {
-    setTimeout(resolve, config.retryDelay || 1000);
-  });
-
-  await delayRetry;
-  return api(config);
+  return Promise.reject(error);
 });
 
-// Add a request interceptor
+// Add request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -52,23 +55,27 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Add response interceptor for better error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Response error:', error.response.data);
+      console.error('Response error:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
       if (error.response.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
     } else if (error.request) {
-      // The request was made but no response was received
-      console.error('Request error:', error.request);
+      console.error('Request error:', {
+        message: error.message,
+        code: error.code,
+        config: error.config
+      });
     } else {
-      // Something happened in setting up the request that triggered an Error
       console.error('Error:', error.message);
     }
     return Promise.reject(error);
