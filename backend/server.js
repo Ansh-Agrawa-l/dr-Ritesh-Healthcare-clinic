@@ -24,17 +24,14 @@ const app = express();
 // Middleware
 app.use(express.json());
 const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'https://dr-ritesh-healthcare-clinic.vercel.app',
-    process.env.FRONTEND_URL
-  ],
+  origin: true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   exposedHeaders: ['x-auth-token']
 };
 
+// Apply CORS middleware before any routes
 app.use(cors(corsOptions));
 app.use(morgan('dev'));
 

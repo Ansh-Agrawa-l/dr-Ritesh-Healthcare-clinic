@@ -16,16 +16,27 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: env.VITE_API_URL.replace('/api', ''),
+          target: 'https://dr-ritesh-healthcare-clinic.vercel.app',
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace(/^\/api/, ''),
+          rewrite: (path) => path.replace(/^\/api/, '/api'),
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('proxy error', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              console.log('Sending Request to the Target:', req.method, req.url);
+            });
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            });
+          },
         },
         '/uploads': {
-          target: env.VITE_UPLOADS_URL.replace('/uploads', ''),
+          target: 'https://dr-ritesh-healthcare-clinic.vercel.app',
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace(/^\/uploads/, ''),
+          rewrite: (path) => path.replace(/^\/uploads/, '/uploads'),
         },
       },
     },
