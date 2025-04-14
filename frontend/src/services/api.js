@@ -6,11 +6,10 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
+    'Accept': 'application/json'
   },
   withCredentials: true,
-  timeout: 60000, // Increased timeout to 60 seconds
+  timeout: 60000,
   retry: 3,
   retryDelay: 2000
 });
@@ -57,16 +56,28 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for better error handling
+// Add response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
+      // Handle validation errors
+      if (error.response.status === 400 && error.response.data.errors) {
+        const validationErrors = error.response.data.errors;
+        console.error('Validation errors:', validationErrors);
+        // You can handle validation errors here, e.g., show them to the user
+        return Promise.reject({
+          message: 'Validation failed',
+          errors: validationErrors
+        });
+      }
+      
       console.error('Response error:', {
         status: error.response.status,
         data: error.response.data,
         headers: error.response.headers
       });
+      
       if (error.response.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
