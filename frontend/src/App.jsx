@@ -20,8 +20,9 @@ import ManageDoctors from './pages/ManageDoctors';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { CircularProgress, Box } from '@mui/material';
+import { useSelector } from 'react-redux';
 
 function LoadingFallback() {
   return (
@@ -56,83 +57,85 @@ function ErrorFallback({ error }) {
 }
 
 function AppRoutes() {
-  const { isAuthenticated, user } = store.getState().auth;
+  const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
+
+  if (loading) {
+    return <LoadingFallback />;
+  }
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
-        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
+      <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
 
-        {/* Protected Routes */}
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              <Navigate to={`/${user?.role}/dashboard`} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
+      {/* Protected Routes */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to={`/${user?.role}/dashboard`} />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-        {/* Admin Routes */}
-        <Route
-          path="/admin/*"
-          element={
-            isAuthenticated && user?.role === 'admin' ? (
-              <Routes>
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="doctors" element={<ManageDoctors />} />
-                <Route path="patients" element={<ManagePatients />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
+      {/* Admin Routes */}
+      <Route
+        path="/admin/*"
+        element={
+          isAuthenticated && user?.role === 'admin' ? (
+            <Routes>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="doctors" element={<ManageDoctors />} />
+              <Route path="patients" element={<ManagePatients />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-        {/* Doctor Routes */}
-        <Route
-          path="/doctor/*"
-          element={
-            isAuthenticated && user?.role === 'doctor' ? (
-              <Routes>
-                <Route path="dashboard" element={<DoctorDashboard />} />
-                <Route path="appointments" element={<ManageAppointments />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
+      {/* Doctor Routes */}
+      <Route
+        path="/doctor/*"
+        element={
+          isAuthenticated && user?.role === 'doctor' ? (
+            <Routes>
+              <Route path="dashboard" element={<DoctorDashboard />} />
+              <Route path="appointments" element={<ManageAppointments />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-        {/* Patient Routes */}
-        <Route
-          path="/patient/*"
-          element={
-            isAuthenticated && user?.role === 'patient' ? (
-              <Routes>
-                <Route path="dashboard" element={<PatientDashboard />} />
-                <Route path="appointments" element={<ManageAppointments />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
+      {/* Patient Routes */}
+      <Route
+        path="/patient/*"
+        element={
+          isAuthenticated && user?.role === 'patient' ? (
+            <Routes>
+              <Route path="dashboard" element={<PatientDashboard />} />
+              <Route path="appointments" element={<ManageAppointments />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-        {/* Catch all route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+      {/* Catch all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

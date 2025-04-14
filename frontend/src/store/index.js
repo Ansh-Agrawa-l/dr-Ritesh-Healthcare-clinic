@@ -7,7 +7,8 @@ const preloadedState = {
     isAuthenticated: false,
     user: null,
     loading: false,
-    error: null
+    error: null,
+    token: null
   },
   patient: {
     patients: [],
@@ -24,7 +25,14 @@ const store = configureStore({
   preloadedState,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false,
+      serializableCheck: {
+        // Ignore these action types
+        ignoredActions: ['auth/login/fulfilled'],
+        // Ignore these field paths in all actions
+        ignoredActionPaths: ['payload.token'],
+        // Ignore these paths in the state
+        ignoredPaths: ['auth.token']
+      },
       immutableCheck: false
     }),
   devTools: process.env.NODE_ENV !== 'production'
