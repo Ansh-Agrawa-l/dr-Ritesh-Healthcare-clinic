@@ -46,18 +46,31 @@ export default defineConfig(({ command, mode }) => {
             mui: ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-data-grid', '@mui/lab'],
             toast: ['react-toastify'],
           },
+          format: 'es',
+          dir: 'dist',
+          entryFileNames: 'assets/[name].[hash].js',
+          chunkFileNames: 'assets/[name].[hash].js',
+          assetFileNames: 'assets/[name].[hash].[ext]'
         },
       },
+      commonjsOptions: {
+        include: [/node_modules/],
+        extensions: ['.js', '.cjs'],
+        strictRequires: true,
+        transformMixedEsModules: true
+      }
     },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+      extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
     },
     define: {
       'process.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL),
       'process.env.VITE_UPLOADS_URL': JSON.stringify(env.VITE_UPLOADS_URL),
       'process.env.NODE_ENV': JSON.stringify(mode),
+      'process.env.BASE_URL': JSON.stringify(env.BASE_URL || '/'),
     },
     optimizeDeps: {
       include: [
@@ -73,9 +86,12 @@ export default defineConfig(({ command, mode }) => {
         'react-toastify',
         'react-error-boundary'
       ],
-      exclude: ['@babel/runtime']
+      exclude: ['@babel/runtime'],
+      esbuildOptions: {
+        target: 'esnext'
+      }
     },
-    base: '/',
+    base: env.BASE_URL || '/',
     preview: {
       port: 5173,
       strictPort: true,
