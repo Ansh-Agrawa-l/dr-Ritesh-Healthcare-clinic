@@ -79,12 +79,51 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/lab-tests', labTestRoutes);
 
+// Root route handler
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Healthcare Management System API',
+    status: 'running',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API Documentation route
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'API Documentation',
+    endpoints: {
+      auth: '/api/auth',
+      doctors: '/api/doctors',
+      patients: '/api/patients',
+      admin: '/api/admin',
+      appointments: '/api/appointments',
+      medicines: '/api/medicines',
+      labTests: '/api/lab-tests'
+    }
+  });
+});
+
 // Error Handler Middleware (should be last)
 app.use(errorMiddleware);
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({ 
+    message: 'Route not found',
+    path: req.path,
+    method: req.method,
+    availableRoutes: [
+      '/api/auth',
+      '/api/doctors',
+      '/api/patients',
+      '/api/admin',
+      '/api/appointments',
+      '/api/medicines',
+      '/api/lab-tests'
+    ]
+  });
 });
 
 // Serve static files in production
@@ -96,9 +135,10 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start the server
-const PORT = config.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
   console.log('Available routes:');
   console.log('- /api/auth');
   console.log('- /api/doctors');
