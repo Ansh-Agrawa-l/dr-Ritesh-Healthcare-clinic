@@ -1,12 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
 import { ThemeProvider } from '@mui/material/styles';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { theme } from './utils/theme';
-import { store } from './store';
+import StoreProvider from './store/Provider';
 import AuthInitializer from './components/AuthInitializer';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,7 +19,7 @@ import ManageDoctors from './pages/ManageDoctors';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import { CircularProgress, Box } from '@mui/material';
 import { useSelector } from 'react-redux';
 
@@ -37,7 +36,7 @@ function LoadingFallback() {
   );
 }
 
-function ErrorFallback({ error }) {
+function ErrorFallback({ error, resetErrorBoundary }) {
   return (
     <Box
       display="flex"
@@ -51,7 +50,7 @@ function ErrorFallback({ error }) {
       <pre style={{ color: 'red', maxWidth: '100%', overflow: 'auto' }}>
         {error.message}
       </pre>
-      <button onClick={() => window.location.reload()}>Try again</button>
+      <button onClick={resetErrorBoundary}>Try again</button>
     </Box>
   );
 }
@@ -141,8 +140,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <Provider store={store}>
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => {
+        window.location.reload();
+      }}
+    >
+      <StoreProvider>
         <ThemeProvider theme={theme}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Router>
@@ -165,7 +169,7 @@ function App() {
             />
           </LocalizationProvider>
         </ThemeProvider>
-      </Provider>
+      </StoreProvider>
     </ErrorBoundary>
   );
 }

@@ -2,13 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import patientReducer from './slices/patientSlice';
 
+// Initialize store with default values
 const preloadedState = {
   auth: {
     isAuthenticated: false,
     user: null,
-    loading: false,
+    loading: true, // Start with loading true
     error: null,
-    token: null
+    token: localStorage.getItem('token') // Get token from localStorage
   },
   patient: {
     patients: [],
@@ -17,6 +18,7 @@ const preloadedState = {
   }
 };
 
+// Create store with middleware configuration
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -27,13 +29,19 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types
-        ignoredActions: ['auth/login/fulfilled'],
+        ignoredActions: [
+          'auth/login/fulfilled',
+          'auth/register/fulfilled',
+          'auth/setCredentials'
+        ],
         // Ignore these field paths in all actions
-        ignoredActionPaths: ['payload.token'],
+        ignoredActionPaths: ['payload.token', 'meta.arg'],
         // Ignore these paths in the state
         ignoredPaths: ['auth.token']
       },
-      immutableCheck: false
+      immutableCheck: {
+        ignoredPaths: ['auth.token']
+      }
     }),
   devTools: process.env.NODE_ENV !== 'production'
 });
