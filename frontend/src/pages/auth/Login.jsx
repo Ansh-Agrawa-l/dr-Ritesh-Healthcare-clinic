@@ -37,24 +37,42 @@ const Login = () => {
     dispatch(loginStart());
 
     try {
-      console.log('Attempting login with:', formData);
+      console.log('Login - Attempting login with:', { ...formData, password: '[REDACTED]' });
       const response = await authApi.login(formData);
-      console.log('Login response:', response.data);
       
-      // Check if the response has the expected structure
-      if (!response.data || !response.data.token || !response.data.user) {
-        throw new Error('Invalid response from server');
+      // Validate response structure
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+      
+      if (!response.data.token) {
+        throw new Error('No token received from server');
+      }
+      
+      if (!response.data.user) {
+        throw new Error('No user data received from server');
       }
 
-      console.log('Dispatching login success with:', response.data);
+      console.log('Login - Server response validated, dispatching login success');
       
-      // Dispatch login success with the server response data
+      // Dispatch login success with the validated data
       dispatch(loginSuccess(response.data));
+
+      // Verify token was stored
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) {
+        throw new Error('Token was not stored in localStorage');
+      }
+      
+      console.log('Login - Token verified in localStorage');
 
       toast.success('Login successful!');
       
       // Navigate based on the role from the server
-      switch (response.data.user.role) {
+      const userRole = response.data.user.role;
+      console.log('Login - Navigating based on role:', userRole);
+      
+      switch (userRole) {
         case 'admin':
           navigate('/admin/dashboard');
           break;
@@ -65,12 +83,21 @@ const Login = () => {
           navigate('/patient/dashboard');
           break;
         default:
+          console.warn('Login - Unknown role:', userRole);
           navigate('/');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      dispatch(loginFailure(error.response?.data?.message || 'Login failed'));
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Login - Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // Clear any existing token on error
+      localStorage.removeItem('token');
+      
+      dispatch(loginFailure(error.response?.data?.message || error.message || 'Login failed'));
+      toast.error(error.response?.data?.message || error.message || 'Login failed');
     } finally {
       setLoading(false);
     }

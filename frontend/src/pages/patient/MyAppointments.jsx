@@ -1,229 +1,237 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import {
-  Container,
-  Typography,
   Box,
+  Typography,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Chip,
   Button,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { patientsApi } from '../../services/api';
-import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  const [retryCount, setRetryCount] = useState(0);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
   const fetchAppointments = async () => {
     try {
+      // Check authentication before making request
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('MyAppointments - No token found');
+        toast.error('Your session has expired. Please log in again.');
+        navigate('/login');
+        return;
+      }
+
+      setLoading(true);
+      console.log('MyAppointments - Fetching appointments with token:', {
+        token: token,
+        user: user
+      });
+
       const response = await patientsApi.getAppointments();
-      console.log('Raw appointments data:', JSON.stringify(response.data, null, 2));
+      console.log('MyAppointments - Raw appointment data:', response.data);
       
-      const transformedAppointments = response.data.map(appointment => {
-        console.log('Processing appointment:', JSON.stringify(appointment, null, 2));
+      const processedAppointments = response.data.map(appointment => {
+        console.log('Processing appointment:', appointment);
         return {
           ...appointment,
-          date: appointment.date || appointment.appointmentDate,
-          time: appointment.time || appointment.appointmentTime || appointment.slot || appointment.timeSlot || 'Not specified',
-          status: (appointment.status || 'unknown').toLowerCase()
+          status: appointment.status?.toLowerCase() || 'pending',
+          date: appointment.date || new Date().toISOString(),
+          time: appointment.time || 'Not specified'
         };
       });
-      
-      console.log('Transformed appointments:', JSON.stringify(transformedAppointments, null, 2));
-      setAppointments(transformedAppointments);
+
+      console.log('MyAppointments - Processed appointments:', processedAppointments);
+      setAppointments(processedAppointments);
+      setRetryCount(0);
     } catch (error) {
-      console.error('Error fetching appointments:', error);
-      toast.error('Failed to fetch appointments');
+      console.error('MyAppointments - Error fetching appointments:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data
+      });
+
+      if (error.response?.status === 401) {
+        console.log('MyAppointments - Unauthorized, redirecting to login');
+        localStorage.removeItem('token');
+        toast.error('Your session has expired. Please log in again.');
+        navigate('/login');
+        return;
+      }
+
+      if (error.message.includes('timeout') && retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`MyAppointments - Retrying in ${delay}ms (attempt ${retryCount + 1})`);
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, delay);
+      } else {
+        toast.error('Failed to fetch appointments. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = async (appointmentId) => {
-    if (window.confirm('Are you sure you want to cancel this appointment?')) {
-      try {
-        await patientsApi.cancelAppointment(appointmentId);
-        toast.success('Appointment cancelled successfully');
-        fetchAppointments();
-      } catch (error) {
+  useEffect(() => {
+    if (user) {
+      fetchAppointments();
+    }
+  }, [user, retryCount]);
+
+  const handleCancelAppointment = (appointment) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Your session has expired. Please log in again.');
+      navigate('/login');
+      return;
+    }
+    setSelectedAppointment(appointment);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancelAppointment = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Your session has expired. Please log in again.');
+        navigate('/login');
+        return;
+      }
+
+      await patientsApi.cancelAppointment(selectedAppointment._id);
+      toast.success('Appointment cancelled successfully');
+      fetchAppointments();
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        toast.error('Your session has expired. Please log in again.');
+        navigate('/login');
+      } else {
         toast.error('Failed to cancel appointment');
       }
+    } finally {
+      setCancelDialogOpen(false);
+      setSelectedAppointment(null);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'scheduled':
-        return 'warning';
-      case 'confirmed':
-        return 'success';
-      case 'cancelled':
-        return 'error';
-      case 'completed':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
-
-  const canCancelAppointment = (status) => {
-    if (!status) return false;
-    const lowerStatus = status.toLowerCase();
-    return lowerStatus === 'scheduled';
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Date not set';
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        console.log('Invalid date string:', dateString);
-        return 'Date not set';
-      }
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error, 'Date string:', dateString);
-      return 'Date not set';
-    }
-  };
-
-  const formatTime = (timeString) => {
-    if (!timeString || timeString === 'Not specified') return timeString;
-    
-    try {
-      if (typeof timeString === 'string') {
-        if (timeString.includes('AM') || timeString.includes('PM')) {
-          return timeString;
-        }
-        
-        if (timeString.includes(':')) {
-          const [hours, minutes] = timeString.split(':');
-          const date = new Date();
-          date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-          return date.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          });
-        }
-      }
-      
-      if (typeof timeString === 'object') {
-        return timeString.startTime || timeString.time || 'Not specified';
-      }
-      
-      return timeString;
-    } catch (error) {
-      console.error('Error formatting time:', error, 'Time string:', timeString);
-      return timeString;
-    }
-  };
-
-  const getDoctorName = (doctor) => {
-    if (!doctor) return 'Doctor not assigned';
-    if (typeof doctor === 'string') return doctor;
-    if (doctor.name) return doctor.name;
-    if (doctor.firstName && doctor.lastName) {
-      return `${doctor.firstName} ${doctor.lastName}`;
-    }
-    return 'Unknown Doctor';
+  const canCancelAppointment = (appointment) => {
+    const status = appointment.status?.toLowerCase();
+    console.log('Checking if appointment can be cancelled:', {
+      id: appointment._id,
+      status: status,
+      canCancel: status === 'pending' || status === 'confirmed'
+    });
+    return status === 'pending' || status === 'confirmed';
   };
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '60vh',
-        }}
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          My Appointments
-        </Typography>
-      </Box>
-
+    <Box p={3}>
+      <Typography variant="h4" gutterBottom>
+        My Appointments
+      </Typography>
+      
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Doctor</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Time</TableCell>
+              <TableCell>Doctor</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {appointments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  No appointments found
+            {appointments.map((appointment) => (
+              <TableRow key={appointment._id}>
+                <TableCell>
+                  {new Date(appointment.date).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  {appointment.time || 'Not specified'}
+                </TableCell>
+                <TableCell>
+                  {appointment.doctor?.name || 'Not specified'}
+                </TableCell>
+                <TableCell>
+                  <Typography
+                    color={
+                      appointment.status === 'completed'
+                        ? 'success.main'
+                        : appointment.status === 'cancelled'
+                        ? 'error.main'
+                        : 'warning.main'
+                    }
+                  >
+                    {appointment.status}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  {canCancelAppointment(appointment) && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleCancelAppointment(appointment)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
-            ) : (
-              appointments.map((appointment) => {
-                console.log('Rendering appointment:', JSON.stringify(appointment, null, 2));
-                const canCancel = canCancelAppointment(appointment.status);
-                console.log('Can cancel appointment:', canCancel, 'Status:', appointment.status);
-                return (
-                  <TableRow key={appointment._id}>
-                    <TableCell>
-                      {getDoctorName(appointment.doctor)}
-                    </TableCell>
-                    <TableCell>{formatDate(appointment.date)}</TableCell>
-                    <TableCell>{formatTime(appointment.time)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={appointment.status || 'Unknown'}
-                        color={getStatusColor(appointment.status)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {canCancel && (
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => handleCancel(appointment._id)}
-                          size="small"
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
-    </Container>
+
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+      >
+        <DialogTitle>Cancel Appointment</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to cancel this appointment?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelDialogOpen(false)}>No</Button>
+          <Button onClick={confirmCancelAppointment} color="error">
+            Yes, Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 
