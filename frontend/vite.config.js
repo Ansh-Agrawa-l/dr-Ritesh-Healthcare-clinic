@@ -5,6 +5,8 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const isProduction = mode === 'production'
+
   return {
     plugins: [
       react({
@@ -32,8 +34,8 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: false,
-      minify: 'terser',
+      sourcemap: !isProduction,
+      minify: isProduction ? 'terser' : false,
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
@@ -71,6 +73,7 @@ export default defineConfig(({ command, mode }) => {
         'react-toastify',
         'react-error-boundary'
       ],
+      exclude: ['@babel/runtime']
     },
     base: '/',
     preview: {

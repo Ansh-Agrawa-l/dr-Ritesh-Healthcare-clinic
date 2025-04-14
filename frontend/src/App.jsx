@@ -20,13 +20,38 @@ import ManageDoctors from './pages/ManageDoctors';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from 'react-error-boundary';
+import { Suspense } from 'react';
+import { CircularProgress, Box } from '@mui/material';
+
+function LoadingFallback() {
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
 
 function ErrorFallback({ error }) {
   return (
-    <div role="alert" style={{ padding: '20px', textAlign: 'center' }}>
+    <Box
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      p={3}
+    >
       <h2>Something went wrong:</h2>
-      <pre style={{ color: 'red' }}>{error.message}</pre>
-    </div>
+      <pre style={{ color: 'red', maxWidth: '100%', overflow: 'auto' }}>
+        {error.message}
+      </pre>
+      <button onClick={() => window.location.reload()}>Try again</button>
+    </Box>
   );
 }
 
@@ -34,7 +59,7 @@ function AppRoutes() {
   const { isAuthenticated, user } = store.getState().auth;
 
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
+    <Suspense fallback={<LoadingFallback />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
@@ -107,7 +132,7 @@ function AppRoutes() {
         {/* Catch all route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </ErrorBoundary>
+    </Suspense>
   );
 }
 
@@ -118,9 +143,11 @@ function App() {
         <ThemeProvider theme={theme}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Router>
-              <AuthInitializer>
-                <AppRoutes />
-              </AuthInitializer>
+              <Suspense fallback={<LoadingFallback />}>
+                <AuthInitializer>
+                  <AppRoutes />
+                </AuthInitializer>
+              </Suspense>
             </Router>
             <ToastContainer
               position="top-right"
