@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../store/slices/authSlice';
 import api from '../services/api';
@@ -7,13 +7,21 @@ import api from '../services/api';
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'patient'
+    role: searchParams.get('role') || 'patient'
   });
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const role = searchParams.get('role');
+    if (role) {
+      setFormData(prev => ({ ...prev, role }));
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
@@ -62,6 +70,11 @@ const Login = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {formData.role === 'admin' ? 'Admin Login' :
+             formData.role === 'doctor' ? 'Doctor Login' :
+             'Patient Login'}
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {errors.length > 0 && (
