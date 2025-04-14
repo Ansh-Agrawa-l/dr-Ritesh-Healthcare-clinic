@@ -26,7 +26,7 @@ app.use(express.json());
 const corsOptions = {
   origin: [
     'http://localhost:5173',
-    'https://your-frontend-domain.vercel.app',
+    'https://dr-ritesh-healthcare-clinic.vercel.app',
     process.env.FRONTEND_URL
   ],
   credentials: true,
