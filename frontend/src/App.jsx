@@ -103,7 +103,10 @@ function App() {
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <LocalizationProvider 
+          dateAdapter={AdapterDateFns}
+          adapterLocale="en-US"
+        >
           <Router>
             <AuthInitializer>
               <AppRoutes />

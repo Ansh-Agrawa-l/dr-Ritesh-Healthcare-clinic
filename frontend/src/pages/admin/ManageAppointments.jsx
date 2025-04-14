@@ -24,6 +24,8 @@ import dayjs from 'dayjs';
 import { DataGrid } from '@mui/x-data-grid';
 import { toast } from 'react-toastify';
 import { adminApi } from '../../services/api';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 const ManageAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -185,12 +187,14 @@ const ManageAppointments = () => {
           </FormControl>
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
-          <DatePicker
-            label="Filter by Date"
-            value={filterDate}
-            onChange={setFilterDate}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="Filter by Date"
+              value={filterDate}
+              onChange={setFilterDate}
+              slotProps={{ textField: { fullWidth: true } }}
+            />
+          </LocalizationProvider>
         </Grid>
       </Grid>
 
