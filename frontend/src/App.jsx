@@ -6,7 +6,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { theme } from './utils/theme';
-import { StoreProvider } from './store/Provider';
+import StoreProvider from './store/Provider';
 import AuthInitializer from './components/AuthInitializer';
 import Login from './pages/Login';
 import Register from './pages/Register';
