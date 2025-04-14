@@ -6,7 +6,17 @@ import path from 'path'
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        jsxRuntime: 'automatic',
+        jsxImportSource: 'react',
+        babel: {
+          plugins: [
+            ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+          ]
+        }
+      })
+    ],
     server: {
       port: 5173,
       proxy: {
@@ -45,6 +55,7 @@ export default defineConfig(({ command, mode }) => {
     define: {
       'process.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL),
       'process.env.VITE_UPLOADS_URL': JSON.stringify(env.VITE_UPLOADS_URL),
+      'process.env.NODE_ENV': JSON.stringify(mode),
     },
     optimizeDeps: {
       include: [
@@ -57,7 +68,8 @@ export default defineConfig(({ command, mode }) => {
         'react',
         'react-dom',
         'react-router-dom',
-        'react-toastify'
+        'react-toastify',
+        'react-error-boundary'
       ],
     },
     base: '/',
