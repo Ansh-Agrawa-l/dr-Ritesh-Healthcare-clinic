@@ -26,7 +26,7 @@ app.use(express.json());
 
 // CORS configuration
 const corsOptions = {
-  origin: 'http://localhost:5173', // instead of `true`
+  origin: ['http://localhost:5173', process.env.FRONTEND_URL].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
@@ -51,7 +51,7 @@ if (!fs.existsSync(uploadsPath)) {
 app.use('/uploads', express.static(uploadsPath, {
   setHeaders: (res, filePath) => {
     console.log('Serving file:', filePath);
-    res.set('Access-Control-Allow-Origin', 'http://localhost:5173');
+    res.set('Access-Control-Allow-Origin', corsOptions.origin[0]);
     res.set('Cache-Control', 'public, max-age=3600');
     // Set content type based on file extension
     const ext = path.extname(filePath).toLowerCase();
