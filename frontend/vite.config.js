@@ -19,7 +19,11 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           mui: ['@mui/material', '@mui/icons-material'],
         },
+        format: 'es',
       },
+    },
+    modulePreload: {
+      polyfill: true,
     },
   },
   server: {
@@ -31,5 +35,8 @@ export default defineConfig({
         secure: false,
       },
     },
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@mui/material', '@mui/icons-material'],
   },
 }) 
