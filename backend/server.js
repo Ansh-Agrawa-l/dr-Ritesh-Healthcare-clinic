@@ -25,7 +25,7 @@ const app = express();
 app.use(express.json());
 const corsOptions = {
   origin: [
-    'http://localhost:3000',
+    'http://localhost:5173',
     'https://your-frontend-domain.vercel.app',
     process.env.FRONTEND_URL
   ],
