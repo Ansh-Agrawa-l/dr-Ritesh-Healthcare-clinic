@@ -19,7 +19,7 @@ import {
   TimelineContent,
   TimelineDot,
 } from '@mui/lab';
-import { doctorsApi } from '../../services/api';
+import { doctorApi } from '../../services/api';
 import { toast } from 'react-toastify';
 
 const Dashboard = () => {
@@ -33,7 +33,7 @@ const Dashboard = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await doctorsApi.getAppointments();
+      const response = await doctorApi.get('/appointments');
       setAppointments(response.data);
     } catch (error) {
       toast.error('Failed to fetch appointments');
