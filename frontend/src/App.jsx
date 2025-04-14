@@ -91,6 +91,7 @@ function AppRoutes() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="doctors" element={<ManageDoctors />} />
               <Route path="patients" element={<ManagePatients />} />
+              <Route path="appointments" element={<ManageAppointments />} />
               <Route path="profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -107,7 +108,7 @@ function AppRoutes() {
           isAuthenticated && user?.role === 'doctor' ? (
             <Routes>
               <Route path="dashboard" element={<DoctorDashboard />} />
-              <Route path="appointments" element={<ManageAppointments />} />
+              <Route path="appointments" element={<DoctorAppointments />} />
               <Route path="profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -124,7 +125,7 @@ function AppRoutes() {
           isAuthenticated && user?.role === 'patient' ? (
             <Routes>
               <Route path="dashboard" element={<PatientDashboard />} />
-              <Route path="appointments" element={<ManageAppointments />} />
+              <Route path="appointments" element={<PatientAppointments />} />
               <Route path="profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
