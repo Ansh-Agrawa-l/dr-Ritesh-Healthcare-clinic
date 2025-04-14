@@ -11,7 +11,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false,
+      },
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
       },
     },
   },
@@ -53,5 +56,10 @@ export default defineConfig({
       'react-router-dom',
       'react-toastify'
     ],
+  },
+  base: '/',
+  preview: {
+    port: 5173,
+    strictPort: true,
   },
 }) 

@@ -1,103 +1,125 @@
-import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { Provider } from 'react-redux';
+import { ThemeProvider } from '@mui/material/styles';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-import store from './store';
 import { theme } from './utils/theme';
+import { store } from './store';
+import AuthInitializer from './components/AuthInitializer';
 import Login from './pages/Login';
-import PatientDashboard from './pages/PatientDashboard';
-import DoctorDashboard from './pages/DoctorDashboard';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-import MainLayout from './layouts/MainLayout';
+import DoctorDashboard from './pages/DoctorDashboard';
+import PatientDashboard from './pages/PatientDashboard';
+import ManageAppointments from './pages/ManageAppointments';
+import ManagePatients from './pages/ManagePatients';
+import ManageDoctors from './pages/ManageDoctors';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 
-const AppRoutes = () => {
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+function AppRoutes() {
+  const { isAuthenticated, user } = store.getState().auth;
 
   return (
-    <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
+      <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Patient routes */}
-          <Route
-            path="patient/dashboard"
-            element={
-              <ProtectedRoute role="patient">
-                <PatientDashboard />
-              </ProtectedRoute>
-            }
-          />
+      {/* Protected Routes */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to={`/${user?.role}/dashboard`} />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-          {/* Doctor routes */}
-          <Route
-            path="doctor/dashboard"
-            element={
-              <ProtectedRoute role="doctor">
-                <DoctorDashboard />
-              </ProtectedRoute>
-            }
-          />
+      {/* Admin Routes */}
+      <Route
+        path="/admin/*"
+        element={
+          isAuthenticated && user?.role === 'admin' ? (
+            <Routes>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="doctors" element={<ManageDoctors />} />
+              <Route path="patients" element={<ManagePatients />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-          {/* Admin routes */}
-          <Route
-            path="admin/dashboard"
-            element={
-              <ProtectedRoute role="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+      {/* Doctor Routes */}
+      <Route
+        path="/doctor/*"
+        element={
+          isAuthenticated && user?.role === 'doctor' ? (
+            <Routes>
+              <Route path="dashboard" element={<DoctorDashboard />} />
+              <Route path="appointments" element={<ManageAppointments />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-          {/* Redirect to appropriate dashboard based on role */}
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                user?.role === 'admin' ? (
-                  <Navigate to="/admin/dashboard" replace />
-                ) : user?.role === 'doctor' ? (
-                  <Navigate to="/doctor/dashboard" replace />
-                ) : (
-                  <Navigate to="/patient/dashboard" replace />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-        </Route>
+      {/* Patient Routes */}
+      <Route
+        path="/patient/*"
+        element={
+          isAuthenticated && user?.role === 'patient' ? (
+            <Routes>
+              <Route path="dashboard" element={<PatientDashboard />} />
+              <Route path="appointments" element={<ManageAppointments />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+      {/* Catch all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
-};
+}
 
 function App() {
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <CssBaseline />
-          <AppRoutes />
-          <ToastContainer position="top-right" autoClose={3000} />
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <Router>
+            <AuthInitializer>
+              <AppRoutes />
+            </AuthInitializer>
+          </Router>
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
         </LocalizationProvider>
       </ThemeProvider>
     </Provider>
