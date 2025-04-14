@@ -4,11 +4,17 @@ import doctorReducer from './slices/doctorSlice';
 import medicineReducer from './slices/medicineSlice';
 import labTestReducer from './slices/labTestSlice';
 
-export const store = configureStore({
+const store = configureStore({
   reducer: {
     auth: authReducer,
     doctor: doctorReducer,
     medicine: medicineReducer,
     labTest: labTestReducer,
   },
-}); 
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false
+    })
+});
+
+export default store; 

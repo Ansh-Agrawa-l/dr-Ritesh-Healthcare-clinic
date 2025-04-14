@@ -1,75 +1,37 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { login, register, getProfile } from '../../services/auth';
-
-// Async thunks
-export const loginUser = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const response = await login(credentials);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-export const registerUser = createAsyncThunk(
-  'auth/register',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await register(userData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-export const fetchUserProfile = createAsyncThunk(
-  'auth/fetchProfile',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await getProfile();
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
+import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
+  isAuthenticated: false,
   user: null,
-  token: localStorage.getItem('token'),
-  loading: false,
-  error: null,
+  loading: true,
+  error: null
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loginStart: (state) => {
-      state.loading = true;
+    setUser: (state, action) => {
+      state.user = action.payload;
+      state.isAuthenticated = !!action.payload;
+      state.loading = false;
       state.error = null;
     },
-    loginSuccess: (state, action) => {
-      state.loading = false;
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.error = null;
+    setLoading: (state, action) => {
+      state.loading = action.payload;
     },
-    loginFailure: (state, action) => {
-      state.loading = false;
+    setError: (state, action) => {
       state.error = action.payload;
+      state.loading = false;
     },
     logout: (state) => {
       state.user = null;
-      state.token = null;
+      state.isAuthenticated = false;
+      state.loading = false;
       state.error = null;
-    },
-  },
+    }
+  }
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { setUser, setLoading, setError, logout } = authSlice.actions;
 export default authSlice.reducer; 

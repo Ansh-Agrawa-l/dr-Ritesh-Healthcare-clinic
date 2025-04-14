@@ -1,5 +1,14 @@
+import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import store from './store';
+import { theme } from './utils/theme';
 import Login from './pages/Login';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
@@ -7,7 +16,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 
-const App = () => {
+const AppRoutes = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   return (
@@ -80,5 +89,19 @@ const App = () => {
     </Router>
   );
 };
+
+function App() {
+  return (
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <CssBaseline />
+          <AppRoutes />
+          <ToastContainer position="top-right" autoClose={3000} />
+        </LocalizationProvider>
+      </ThemeProvider>
+    </Provider>
+  );
+}
 
 export default App;
