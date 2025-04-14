@@ -36,9 +36,8 @@ process.on('unhandledRejection', (err) => {
 // Initialize Express
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(cors({
+// CORS configuration
+const corsOptions = {
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -46,19 +45,25 @@ app.use(cors({
     'https://dr-ritesh-healthcare-clinic.vercel.app'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
-  exposedHeaders: ['x-auth-token']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With'],
+  exposedHeaders: ['x-auth-token'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Handle preflight requests
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
 app.use(morgan('dev'));
 
 // Add request logging middleware
 app.use((req, res, next) => {
   console.log(`Incoming ${req.method} request to ${req.url}`);
+  console.log('Headers:', req.headers);
   next();
 });
 
