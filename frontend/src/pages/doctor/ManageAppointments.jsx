@@ -23,7 +23,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
 import { DataGrid } from '@mui/x-data-grid';
 import { toast } from 'react-toastify';
-import { adminApi } from '../../services/api';
+import { doctorsApi } from '../../services/api';
 
 const ManageAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -43,7 +43,7 @@ const ManageAppointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await adminApi.getAppointments();
+      const response = await doctorsApi.getAppointments();
       setAppointments(response.data);
     } catch (error) {
       toast.error('Failed to fetch appointments');
@@ -54,12 +54,13 @@ const ManageAppointments = () => {
 
   const handleUpdateAppointment = async () => {
     try {
-      await adminApi.updateAppointment(selectedAppointment._id, updateForm);
+      await doctorsApi.updateAppointmentStatus(selectedAppointment._id, updateForm.status);
       toast.success('Appointment updated successfully');
       setOpenUpdateDialog(false);
       fetchAppointments();
     } catch (error) {
-      toast.error('Failed to update appointment');
+      console.error('Update appointment error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update appointment');
     }
   };
 
@@ -83,13 +84,7 @@ const ManageAppointments = () => {
       field: 'patient',
       headerName: 'Patient',
       flex: 1,
-      valueGetter: (params) => params.row.patient?.name || 'Unknown',
-    },
-    {
-      field: 'doctor',
-      headerName: 'Doctor',
-      flex: 1,
-      valueGetter: (params) => params.row.doctor?.name || 'Unknown',
+      valueGetter: (params) => params.row.patient.name,
     },
     {
       field: 'appointmentDate',

@@ -148,8 +148,10 @@ const BookAppointment = () => {
                   label="Appointment Date"
                   value={formData.appointmentDate}
                   onChange={handleDateChange}
-                  slotProps={{ textField: { fullWidth: true, required: true } }}
-                  minDate={dayjs()}
+                  renderInput={(params) => (
+                    <TextField {...params} fullWidth required />
+                  )}
+                  minDate={new Date()}
                   disablePast
                 />
               </LocalizationProvider>

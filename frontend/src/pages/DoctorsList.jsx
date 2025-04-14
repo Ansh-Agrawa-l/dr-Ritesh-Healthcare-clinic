@@ -120,10 +120,14 @@ const DoctorsList = () => {
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardMedia
                 component="img"
-                height="300"
+                sx={{
+                  height: 300,
+                  width: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center'
+                }}
                 image={doctor.photo ? `${config.UPLOADS_URL}/doctors/${doctor.photo}` : '/default-doctor.jpg'}
                 alt={doctor.name}
-                sx={{ objectFit: 'cover' }}
               />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography variant="h6" gutterBottom>
@@ -135,8 +139,17 @@ const DoctorsList = () => {
                   variant="outlined"
                   sx={{ mb: 1 }}
                 />
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" gutterBottom>
                   {doctor.qualification}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Experience: {doctor.experience} years
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Phone: {doctor.phone}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Address: {doctor.address}
                 </Typography>
                 <Button
                   fullWidth

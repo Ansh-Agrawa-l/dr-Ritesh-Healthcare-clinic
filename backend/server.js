@@ -15,126 +15,59 @@ const appointmentRoutes = require('./routes/appointments');
 const medicineRoutes = require('./routes/medicines');
 const labTestRoutes = require('./routes/labTests');
 
-// Add detailed logging for environment variables
-console.log('Environment Variables:');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('PORT:', process.env.PORT);
-console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not Set');
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-
-// Add error handling for uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Rejection:', err);
-  process.exit(1);
-});
+// Connect to Database
+connectDB();
 
 // Initialize Express
 const app = express();
 
-// CORS configuration
+// Middleware
+app.use(express.json());
 const corsOptions = {
   origin: [
-    'http://localhost:5173',
     'http://localhost:3000',
-    'https://dr-ritesh-healthcare-clinic-wze6.vercel.app',
-    'https://dr-ritesh-healthcare-clinic.vercel.app'
+    'https://your-frontend-domain.vercel.app',
+    process.env.FRONTEND_URL
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With'],
-  exposedHeaders: ['x-auth-token'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// Apply CORS middleware
 app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-
 app.use(morgan('dev'));
 
-// Add request logging middleware
-app.use((req, res, next) => {
-  console.log(`Incoming ${req.method} request to ${req.url}`);
-  console.log('Headers:', req.headers);
-  next();
-});
+// Serve static files from uploads directory with logging
+const uploadsPath = path.join(__dirname, 'uploads');
+console.log('Serving static files from:', uploadsPath);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Connect to Database with retry logic
-const connectWithRetry = async () => {
-  try {
-    await connectDB();
-    console.log('MongoDB Connected Successfully');
-  } catch (err) {
-    console.error('MongoDB Connection Error:', err);
-    // Retry after 5 seconds
-    setTimeout(connectWithRetry, 5000);
-  }
-};
-
-connectWithRetry();
-
-// Remove local file system handling
-// const uploadsPath = path.join(__dirname, 'uploads');
-// console.log('Serving static files from:', uploadsPath);
-
-// if (!fs.existsSync(uploadsPath)) {
-//   console.log('Creating uploads directory...');
-//   fs.mkdirSync(uploadsPath, { recursive: true });
-// }
+// Check if uploads directory exists
+if (!fs.existsSync(uploadsPath)) {
+  console.log('Creating uploads directory...');
+  fs.mkdirSync(uploadsPath, { recursive: true });
+}
 
 // Configure static file serving with detailed logging
-// app.use('/uploads', express.static(uploadsPath, {
-//   setHeaders: (res, filePath) => {
-//     console.log('Serving file:', filePath);
-//     res.set('Access-Control-Allow-Origin', '*');
-//     res.set('Cache-Control', 'public, max-age=3600');
-//     // Set content type based on file extension
-//     const ext = path.extname(filePath).toLowerCase();
-//     if (ext === '.jpg' || ext === '.jpeg') {
-//       res.set('Content-Type', 'image/jpeg');
-//     } else if (ext === '.png') {
-//       res.set('Content-Type', 'image/png');
-//     }
-//   }
-// }));
+app.use('/uploads', express.static(uploadsPath, {
+  setHeaders: (res, filePath) => {
+    console.log('Serving file:', filePath);
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=3600');
+    // Set content type based on file extension
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.jpg' || ext === '.jpeg') {
+      res.set('Content-Type', 'image/jpeg');
+    } else if (ext === '.png') {
+      res.set('Content-Type', 'image/png');
+    }
+  }
+}));
 
 // Add error handling for static files
-// app.use('/uploads', (err, req, res, next) => {
-//   console.error('Error serving static file:', err);
-//   console.error('Requested path:', req.path);
-//   res.status(404).send('File not found');
-// });
-
-// Add root path handler
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Healthcare Clinic API is running',
-    version: '1.0.0',
-    environment: process.env.NODE_ENV
-  });
-});
-
-// Add health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  });
+app.use('/uploads', (err, req, res, next) => {
+  console.error('Error serving static file:', err);
+  console.error('Requested path:', req.path);
+  res.status(404).send('File not found');
 });
 
 // Routes
@@ -146,24 +79,34 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/lab-tests', labTestRoutes);
 
-// Error Handler Middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
-    timestamp: new Date().toISOString()
-  });
-});
+// Error Handler Middleware (should be last)
+app.use(errorMiddleware);
 
-// 404 Handler
+// 404 handler
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.method} ${req.url} not found`,
-    timestamp: new Date().toISOString()
-  });
+  res.status(404).json({ message: 'Route not found' });
 });
 
-// Export the Express API
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
+  });
+}
+
+// Start the server
+const PORT = config.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log('Available routes:');
+  console.log('- /api/auth');
+  console.log('- /api/doctors');
+  console.log('- /api/patients');
+  console.log('- /api/admin');
+  console.log('- /api/appointments');
+  console.log('- /api/medicines');
+  console.log('- /api/lab-tests');
+});
+
 module.exports = app;

@@ -12,24 +12,6 @@ A comprehensive healthcare management system for clinics, hospitals, and medical
 - User Authentication
 - Role-based Access Control
 
-## Tech Stack
-
-### Frontend
-- React.js
-- Material-UI
-- Redux Toolkit
-- Axios
-- React Router
-- Formik & Yup
-
-### Backend
-- Node.js
-- Express.js
-- MongoDB
-- JWT Authentication
-- Multer (File Uploads)
-- Bcrypt (Password Hashing)
-
 ## Prerequisites
 
 - Node.js (v14 or higher)
@@ -90,30 +72,6 @@ A comprehensive healthcare management system for clinics, hospitals, and medical
    ```bash
    npm start
    ```
-
-## Project Structure
-
-```
-healthcare-clinic/
-├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── uploads/
-│   └── server.js
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── store/
-│   │   └── App.js
-│   └── package.json
-└── README.md
-```
 
 ## Deployment Instructions
 
@@ -226,4 +184,49 @@ healthcare-clinic/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+# Healthcare Management System - Deployment Guide
+
+## Vercel Deployment Instructions
+
+### Prerequisites
+- Vercel account
+- MongoDB Atlas account
+- Git repository
+
+### Backend Deployment
+1. Push your code to a Git repository
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "New Project"
+4. Import your repository
+5. Configure the following environment variables in Vercel:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `FRONTEND_URL`
+   - `UPLOAD_DIR`
+   - `MAX_FILE_SIZE`
+6. Deploy
+
+### Frontend Deployment
+1. Push your code to a Git repository
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "New Project"
+4. Import your repository
+5. Configure the following environment variables in Vercel:
+   - `REACT_APP_API_URL`
+   - `REACT_APP_UPLOADS_URL`
+6. Deploy
+
+### Post-Deployment
+1. Update CORS settings in backend with your frontend domain
+2. Test all functionalities
+3. Monitor error logs
+4. Set up proper error tracking
+
+### Important Notes
+- Keep your environment variables secure
+- Use strong JWT secrets
+- Configure proper CORS settings
+- Monitor your MongoDB connection
+- Set up proper error handling 

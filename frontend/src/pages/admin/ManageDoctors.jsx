@@ -211,10 +211,14 @@ const ManageDoctors = () => {
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardMedia
                 component="img"
-                height="300"
+                sx={{
+                  height: 300,
+                  width: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center'
+                }}
                 image={doctor.photo ? `${config.UPLOADS_URL}/doctors/${doctor.photo}` : '/default-doctor.jpg'}
                 alt={doctor.name}
-                sx={{ objectFit: 'cover' }}
               />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography variant="h6" gutterBottom>
@@ -226,21 +230,30 @@ const ManageDoctors = () => {
                 <Typography variant="body2" color="text.secondary">
                   {doctor.qualification}
                 </Typography>
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleOpen(doctor)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(doctor._id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Experience: {doctor.experience} years
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Phone: {doctor.phone}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Address: {doctor.address}
+                </Typography>
               </CardContent>
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <IconButton
+                  color="primary"
+                  onClick={() => handleOpen(doctor)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={() => handleDelete(doctor._id)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
             </Card>
           </Grid>
         ))}
