@@ -1,18 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
 import {
-  Container,
-  Paper,
-  Typography,
   Box,
-  Button,
+  Typography,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
+  Button,
   IconButton,
   Dialog,
   DialogTitle,
@@ -21,57 +18,60 @@ import {
   TextField,
   MenuItem,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-} from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { fetchAppointments, updateAppointment, deleteAppointment } from '../store/slices/appointmentSlice';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
-function ManageAppointments() {
-  const dispatch = useDispatch();
-  const { appointments, loading } = useSelector((state) => state.appointment);
-  const { user } = useSelector((state) => state.auth);
+const ManageAppointments = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [formData, setFormData] = useState({
-    date: new Date(),
+    patient: '',
+    doctor: '',
+    date: '',
     time: '',
-    status: 'pending',
-    notes: '',
+    status: 'scheduled',
+    reason: '',
   });
 
+  const fetchAppointments = async () => {
+    try {
+      const response = await api.get('/appointments');
+      setAppointments(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch appointments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadAppointments = async () => {
-      try {
-        await dispatch(fetchAppointments()).unwrap();
-      } catch (error) {
-        toast.error('Failed to load appointments');
-      }
-    };
-    loadAppointments();
-  }, [dispatch]);
+    fetchAppointments();
+  }, []);
 
   const handleOpenDialog = (appointment = null) => {
     if (appointment) {
       setSelectedAppointment(appointment);
       setFormData({
-        date: new Date(appointment.date),
+        patient: appointment.patient._id,
+        doctor: appointment.doctor._id,
+        date: appointment.date,
         time: appointment.time,
         status: appointment.status,
-        notes: appointment.notes || '',
+        reason: appointment.reason,
       });
     } else {
       setSelectedAppointment(null);
       setFormData({
-        date: new Date(),
+        patient: '',
+        doctor: '',
+        date: '',
         time: '',
-        status: 'pending',
-        notes: '',
+        status: 'scheduled',
+        reason: '',
       });
     }
     setOpenDialog(true);
@@ -82,185 +82,158 @@ function ManageAppointments() {
     setSelectedAppointment(null);
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (selectedAppointment) {
-        await dispatch(updateAppointment({
-          id: selectedAppointment._id,
-          ...formData,
-        })).unwrap();
+        await api.put(`/appointments/${selectedAppointment._id}`, formData);
         toast.success('Appointment updated successfully');
+      } else {
+        await api.post('/appointments', formData);
+        toast.success('Appointment created successfully');
       }
       handleCloseDialog();
+      fetchAppointments();
     } catch (error) {
-      toast.error(error.message || 'Failed to update appointment');
+      toast.error(error.response?.data?.message || 'Operation failed');
     }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this appointment?')) {
       try {
-        await dispatch(deleteAppointment(id)).unwrap();
+        await api.delete(`/appointments/${id}`);
         toast.success('Appointment deleted successfully');
+        fetchAppointments();
       } catch (error) {
         toast.error('Failed to delete appointment');
       }
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'cancelled':
-        return 'error';
-      case 'completed':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-          <Typography variant="h4" component="h1">
-            Manage Appointments
-          </Typography>
-          {user?.role === 'patient' && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-            >
-              New Appointment
-            </Button>
-          )}
-        </Box>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4">Manage Appointments</Typography>
+        <Button variant="contained" color="primary" onClick={() => handleOpenDialog()}>
+          Add Appointment
+        </Button>
+      </Box>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Time</TableCell>
-                <TableCell>Doctor</TableCell>
-                <TableCell>Patient</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Notes</TableCell>
-                <TableCell>Actions</TableCell>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Patient</TableCell>
+              <TableCell>Doctor</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Time</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Reason</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {appointments.map((appointment) => (
+              <TableRow key={appointment._id}>
+                <TableCell>{appointment.patient.name}</TableCell>
+                <TableCell>{appointment.doctor.name}</TableCell>
+                <TableCell>{new Date(appointment.date).toLocaleDateString()}</TableCell>
+                <TableCell>{appointment.time}</TableCell>
+                <TableCell>{appointment.status}</TableCell>
+                <TableCell>{appointment.reason}</TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleOpenDialog(appointment)} color="primary">
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(appointment._id)} color="error">
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {appointments.map((appointment) => (
-                <TableRow key={appointment._id}>
-                  <TableCell>
-                    {new Date(appointment.date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{appointment.time}</TableCell>
-                  <TableCell>{appointment.doctor?.name}</TableCell>
-                  <TableCell>{appointment.patient?.name}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={appointment.status}
-                      color={getStatusColor(appointment.status)}
-                    />
-                  </TableCell>
-                  <TableCell>{appointment.notes}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpenDialog(appointment)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(appointment._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-        <Dialog open={openDialog} onClose={handleCloseDialog}>
-          <DialogTitle>
-            {selectedAppointment ? 'Edit Appointment' : 'New Appointment'}
-          </DialogTitle>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedAppointment ? 'Edit Appointment' : 'Add Appointment'}</DialogTitle>
+        <form onSubmit={handleSubmit}>
           <DialogContent>
-            <Box component="form" sx={{ mt: 2 }}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Date"
-                  value={formData.date}
-                  onChange={(date) => setFormData({ ...formData, date })}
-                  renderInput={(params) => (
-                    <TextField {...params} fullWidth margin="normal" />
-                  )}
-                />
-              </LocalizationProvider>
-              <TextField
-                fullWidth
-                label="Time"
-                name="time"
-                type="time"
-                value={formData.time}
-                onChange={handleChange}
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                fullWidth
-                select
-                label="Status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                margin="normal"
-              >
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="confirmed">Confirmed</MenuItem>
-                <MenuItem value="cancelled">Cancelled</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-              </TextField>
-              <TextField
-                fullWidth
-                label="Notes"
-                name="notes"
-                multiline
-                rows={4}
-                value={formData.notes}
-                onChange={handleChange}
-                margin="normal"
-              />
-            </Box>
+            <TextField
+              fullWidth
+              label="Patient"
+              value={formData.patient}
+              onChange={(e) => setFormData({ ...formData, patient: e.target.value })}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Doctor"
+              value={formData.doctor}
+              onChange={(e) => setFormData({ ...formData, doctor: e.target.value })}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              margin="normal"
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              fullWidth
+              label="Time"
+              type="time"
+              value={formData.time}
+              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+              margin="normal"
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              fullWidth
+              select
+              label="Status"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              margin="normal"
+              required
+            >
+              <MenuItem value="scheduled">Scheduled</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+              <MenuItem value="cancelled">Cancelled</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              label="Reason"
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              margin="normal"
+              required
+              multiline
+              rows={3}
+            />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancel</Button>
-            <Button onClick={handleSubmit} variant="contained" color="primary">
-              {selectedAppointment ? 'Update' : 'Create'}
+            <Button type="submit" variant="contained" color="primary">
+              {selectedAppointment ? 'Update' : 'Add'}
             </Button>
           </DialogActions>
-        </Dialog>
-      </Box>
-    </Container>
+        </form>
+      </Dialog>
+    </Box>
   );
-}
+};
 
 export default ManageAppointments; 

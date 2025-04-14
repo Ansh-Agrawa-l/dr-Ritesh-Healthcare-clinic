@@ -1,18 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Paper,
+  Box,
   Typography,
+  Paper,
   TextField,
   Button,
-  Box,
+  Grid,
   Avatar,
+  IconButton,
 } from '@mui/material';
-import { updateProfile } from '../store/slices/authSlice';
+import { PhotoCamera } from '@mui/icons-material';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
-function Profile() {
+const Profile = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
@@ -20,7 +22,9 @@ function Profile() {
     email: '',
     phone: '',
     address: '',
+    profileImage: null,
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -29,6 +33,7 @@ function Profile() {
         email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
+        profileImage: user.profileImage || null,
       });
     }
   }, [user]);
@@ -40,80 +45,145 @@ function Profile() {
     });
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+
+      try {
+        setLoading(true);
+        const response = await api.put('/users/profile/image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setFormData((prev) => ({
+          ...prev,
+          profileImage: response.data.profileImage,
+        }));
+        toast.success('Profile image updated successfully');
+      } catch (error) {
+        toast.error('Failed to update profile image');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(updateProfile(formData)).unwrap();
+      setLoading(true);
+      await api.put('/users/profile', formData);
       toast.success('Profile updated successfully');
     } catch (error) {
-      toast.error(error.message || 'Failed to update profile');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <Avatar
-              sx={{ width: 100, height: 100, mr: 2 }}
-              src={user?.avatar}
-            />
-            <Typography variant="h4" component="h1">
-              Profile Settings
-            </Typography>
-          </Box>
-          <form onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="Address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              margin="normal"
-              multiline
-              rows={3}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ mt: 3 }}
-            >
-              Update Profile
-            </Button>
-          </form>
-        </Paper>
-      </Box>
-    </Container>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Profile
+      </Typography>
+      <Paper sx={{ p: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
+            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+              <Avatar
+                src={formData.profileImage}
+                sx={{ width: 150, height: 150, mb: 2 }}
+              />
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="profile-image"
+                type="file"
+                onChange={handleImageChange}
+              />
+              <label htmlFor="profile-image">
+                <IconButton
+                  color="primary"
+                  component="span"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    '&:hover': {
+                      backgroundColor: 'white',
+                    },
+                  }}
+                >
+                  <PhotoCamera />
+                </IconButton>
+              </label>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={8}>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    multiline
+                    rows={3}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={loading}
+                  >
+                    Update Profile
+                  </Button>
+                </Grid>
+              </Grid>
+            </form>
+          </Grid>
+        </Grid>
+      </Paper>
+    </Box>
   );
-}
+};
 
 export default Profile; 

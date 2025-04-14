@@ -1,28 +1,28 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
-  Container,
-  Paper,
+  Box,
   Typography,
   TextField,
   Button,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
+  Link,
+  Paper,
+  Container,
   MenuItem,
 } from '@mui/material';
 import { register } from '../store/slices/authSlice';
 import { toast } from 'react-toastify';
 
-function Register() {
-  const navigate = useNavigate();
+const Register = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     role: 'patient',
   });
 
@@ -35,18 +35,29 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
     try {
       await dispatch(register(formData)).unwrap();
-      toast.success('Registration successful! Please login.');
-      navigate('/login');
+      navigate('/');
     } catch (error) {
-      toast.error(error.message || 'Registration failed');
+      toast.error(error);
     }
   };
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 8, mb: 4 }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          py: 4,
+        }}
+      >
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">
             Register
@@ -81,44 +92,49 @@ function Register() {
               margin="normal"
               required
             />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Role</InputLabel>
-              <Select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                label="Role"
-                required
-              >
-                <MenuItem value="patient">Patient</MenuItem>
-                <MenuItem value="doctor">Doctor</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              select
+              label="Role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              margin="normal"
+              required
+            >
+              <MenuItem value="patient">Patient</MenuItem>
+              <MenuItem value="doctor">Doctor</MenuItem>
+            </TextField>
             <Button
               type="submit"
+              fullWidth
               variant="contained"
               color="primary"
-              fullWidth
-              sx={{ mt: 3 }}
+              sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
             >
               Register
             </Button>
+            <Box sx={{ textAlign: 'center' }}>
+              <Link component={RouterLink} to="/login" variant="body2">
+                Already have an account? Login
+              </Link>
+            </Box>
           </form>
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2">
-              Already have an account?{' '}
-              <Button
-                color="primary"
-                onClick={() => navigate('/login')}
-              >
-                Login
-              </Button>
-            </Typography>
-          </Box>
         </Paper>
       </Box>
     </Container>
   );
-}
+};
 
 export default Register; 

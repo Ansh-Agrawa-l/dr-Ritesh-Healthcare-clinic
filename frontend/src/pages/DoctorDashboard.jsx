@@ -1,122 +1,67 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Button,
-} from '@mui/material';
-import {
-  CalendarMonth as CalendarIcon,
-  People as PeopleIcon,
-  AccessTime as TimeIcon,
-} from '@mui/icons-material';
-import { fetchDashboardStats } from '../store/slices/doctorSlice';
-import { toast } from 'react-toastify';
+import React from 'react';
+import { Box, Typography, Grid, Card, CardContent } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
-function DoctorDashboard() {
-  const dispatch = useDispatch();
-  const { stats, loading } = useSelector((state) => state.doctor);
-  const [refreshKey, setRefreshKey] = useState(0);
+const DoctorDashboard = () => {
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        await dispatch(fetchDashboardStats()).unwrap();
-      } catch (error) {
-        toast.error('Failed to load dashboard statistics');
-      }
-    };
-    loadStats();
-  }, [dispatch, refreshKey]);
-
-  const handleRefresh = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
+  const dashboardItems = [
+    {
+      title: 'My Appointments',
+      description: 'View and manage your appointments',
+      path: '/doctor/appointments',
+    },
+    {
+      title: 'Patient Records',
+      description: 'Access and update patient records',
+      path: '/doctor/patients',
+    },
+    {
+      title: 'Schedule',
+      description: 'Manage your availability and schedule',
+      path: '/doctor/schedule',
+    },
+    {
+      title: 'Profile',
+      description: 'Update your doctor profile',
+      path: '/doctor/profile',
+    },
+  ];
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-          <Typography variant="h4" component="h1">
-            Doctor Dashboard
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-        </Box>
-
-        <Grid container spacing={3}>
-          {/* Today's Appointments */}
-          <Grid item xs={12} md={4}>
-            <Card>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Doctor Dashboard
+      </Typography>
+      <Grid container spacing={3}>
+        {dashboardItems.map((item) => (
+          <Grid item xs={12} sm={6} md={4} key={item.title}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: 'pointer',
+                '&:hover': {
+                  boxShadow: 6,
+                },
+              }}
+              onClick={() => navigate(item.path)}
+            >
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CalendarIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Today's Appointments</Typography>
-                </Box>
-                <Typography variant="h4">{stats?.todayAppointments || 0}</Typography>
+                <Typography variant="h6" component="h2" gutterBottom>
+                  {item.title}
+                </Typography>
                 <Typography color="text.secondary">
-                  Appointments scheduled for today
+                  {item.description}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-
-          {/* Total Patients */}
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PeopleIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Total Patients</Typography>
-                </Box>
-                <Typography variant="h4">{stats?.totalPatients || 0}</Typography>
-                <Typography color="text.secondary">
-                  Patients under your care
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Pending Appointments */}
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <TimeIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Pending Appointments</Typography>
-                </Box>
-                <Typography variant="h4">{stats?.pendingAppointments || 0}</Typography>
-                <Typography color="text.secondary">
-                  Appointments awaiting confirmation
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Upcoming Appointments */}
-          <Grid item xs={12}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Upcoming Appointments
-              </Typography>
-              {/* Add appointments list component here */}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-    </Container>
+        ))}
+      </Grid>
+    </Box>
   );
-}
+};
 
 export default DoctorDashboard; 

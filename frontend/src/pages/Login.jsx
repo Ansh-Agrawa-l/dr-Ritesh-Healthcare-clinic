@@ -1,130 +1,99 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setUser } from '../store/slices/authSlice';
-import api from '../services/api';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Link,
+  Paper,
+  Container,
+} from '@mui/material';
+import { login } from '../store/slices/authSlice';
+import { toast } from 'react-toastify';
 
 const Login = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { loading } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: searchParams.get('role') || 'patient'
   });
-  const [errors, setErrors] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const role = searchParams.get('role');
-    if (role) {
-      setFormData(prev => ({ ...prev, role }));
-    }
-  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors([]);
-    setLoading(true);
-
     try {
-      console.log('Attempting login with:', formData);
-      const response = await api.post('/auth/login', formData);
-      const { token, user } = response.data;
-      
-      localStorage.setItem('token', token);
-      dispatch(setUser(user));
-      
-      // Redirect based on role
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (user.role === 'doctor') {
-        navigate('/doctor/dashboard');
-      } else {
-        navigate('/patient/dashboard');
-      }
+      await dispatch(login(formData)).unwrap();
+      navigate('/');
     } catch (error) {
-      console.error('Login error:', error);
-      if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        setErrors([{ msg: error.message || 'Login failed. Please try again.' }]);
-      }
-    } finally {
-      setLoading(false);
+      toast.error(error);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            {formData.role === 'admin' ? 'Admin Login' :
-             formData.role === 'doctor' ? 'Doctor Login' :
-             'Patient Login'}
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-              {errors.map((error, index) => (
-                <p key={index} className="text-sm">{error.msg}</p>
-              ))}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          py: 4,
+        }}
+      >
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom align="center">
+            Login
+          </Typography>
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <Button
               type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              sx={{ mt: 3, mb: 2 }}
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              Login
+            </Button>
+            <Box sx={{ textAlign: 'center' }}>
+              <Link component={RouterLink} to="/register" variant="body2">
+                Don't have an account? Register
+              </Link>
+            </Box>
+          </form>
+        </Paper>
+      </Box>
+    </Container>
   );
 };
 
