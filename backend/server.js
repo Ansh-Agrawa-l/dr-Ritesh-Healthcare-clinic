@@ -24,12 +24,13 @@ const app = express();
 // Middleware
 app.use(express.json());
 const corsOptions = {
-  origin: true, // Allow all origins in development
+  origin: 'http://localhost:5173', // instead of `true`
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   exposedHeaders: ['x-auth-token']
 };
+
 
 // Apply CORS middleware before any routes
 app.use(cors(corsOptions));
