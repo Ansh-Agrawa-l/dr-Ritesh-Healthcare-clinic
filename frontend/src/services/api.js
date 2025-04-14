@@ -1,17 +1,16 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'https://dr-ritesh-healthcare-clinic.vercel.app/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+// Create axios instance
 const api = axios.create({
-  baseURL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
   },
-  withCredentials: true,
 });
 
-// Add a request interceptor
+// Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -25,116 +24,64 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Add response interceptor to handle token expiration
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If error is 401 and we haven't tried to refresh token yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Try to refresh token
+        const response = await api.post('/auth/refresh-token');
+        const { token } = response.data;
+        
+        // Store new token
+        localStorage.setItem('token', token);
+        
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, clear token and redirect to login
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
+    
     return Promise.reject(error);
   }
 );
 
+// Auth API
 export const authApi = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
+  refreshToken: () => api.post('/auth/refresh-token'),
   getProfile: () => api.get('/auth/profile'),
-};
-
-export const doctorsApi = {
-  getAll: () => api.get('/doctors'),
-  getProfile: () => api.get('/doctors/profile'),
-  updateProfile: (formData) => {
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    };
-    return api.patch('/doctors/profile', formData, config);
-  },
-  getAppointments: () => api.get('/doctors/appointments'),
-  updateAppointmentStatus: (id, status) => api.patch(`/doctors/appointments/${id}`, { status }),
-  getMedicines: () => api.get('/medicines'),
-};
-
-export const patientsApi = {
-  getAppointments: () => api.get('/appointments'),
-  bookAppointment: (data) => api.post('/appointments', data),
-  cancelAppointment: (id) => api.patch(`/appointments/${id}/cancel`),
-  getProfile: () => api.get('/patients/profile'),
-  updateProfile: (data) => api.put('/patients/profile', data),
-  getLabTests: () => api.get('/lab-tests'),
-  bookLabTest: (data) => api.post('/patients/lab-tests/book', data),
-  getLabTestHistory: () => api.get('/lab-tests/history'),
-};
-
-export const adminApi = {
-  getDashboard: () => api.get('/admin/dashboard'),
-  getStats: () => api.get('/admin/stats'),
-  getUsers: () => api.get('/admin/users'),
-  getDoctors: () => api.get('/admin/doctors'),
-  getAppointments: () => api.get('/admin/appointments'),
-  addDoctor: (formData) => {
-    return api.post('/admin/doctors', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-  updateDoctor: (id, formData) => {
-    return api.put(`/admin/doctors/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-  deleteDoctor: (id) => api.delete(`/admin/doctors/${id}`),
-  getMedicines: () => api.get('/medicines'),
-  getLabTests: () => api.get('/admin/lab-tests'),
-  createLabTest: (data) => api.post('/admin/lab-tests', data),
-  updateLabTest: (id, data) => api.put(`/admin/lab-tests/${id}`, data),
-  deleteLabTest: (id) => api.delete(`/admin/lab-tests/${id}`),
-  getLabTestBookings: () => api.get('/admin/lab-tests/bookings'),
-  updateLabTestBookingStatus: (id, status) => 
-    api.patch(`/admin/lab-tests/bookings/${id}/status`, { status }),
-  createMedicine: (formData) => {
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        console.log('Upload progress:', percentCompleted);
-      }
-    };
-    return api.post('/medicines/admin', formData, config);
-  },
-  updateMedicine: (id, formData) => {
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    };
-    return api.put(`/medicines/admin/${id}`, formData, config);
-  },
-  deleteMedicine: (id) => api.delete(`/medicines/admin/${id}`),
-};
-
-// Medicines API
-export const medicinesApi = {
-  getAll: () => api.get('/medicines'),
-  getOrders: () => api.get('/medicines/orders'),
-  orderMedicine: (data) => api.post('/medicines', data),
 };
 
 // Lab Tests API
 export const labTestsApi = {
-  getAllLabTests: () => api.get('/lab-tests'),
-  getLabTestById: (id) => api.get(`/lab-tests/${id}`),
-  bookLabTest: (data) => api.post('/lab-tests/book', data),
-  getBookings: () => api.get('/lab-tests/bookings'),
+  getAll: () => api.get('/lab-tests'),
+  getById: (id) => api.get(`/lab-tests/${id}`),
+  create: (testData) => api.post('/lab-tests', testData),
+  update: (id, testData) => api.put(`/lab-tests/${id}`, testData),
+  delete: (id) => api.delete(`/lab-tests/${id}`),
+};
+
+// Bookings API
+export const bookingsApi = {
+  getAll: () => api.get('/bookings'),
+  getById: (id) => api.get(`/bookings/${id}`),
+  create: (bookingData) => api.post('/bookings', bookingData),
+  update: (id, bookingData) => api.put(`/bookings/${id}`, bookingData),
+  cancel: (id) => api.post(`/bookings/${id}/cancel`),
 };
 
 export default api;
