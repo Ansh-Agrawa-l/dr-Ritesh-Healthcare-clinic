@@ -47,11 +47,14 @@ api.interceptors.request.use(
         tokenPrefix: formattedToken.substring(0, 20) + '...',
         fullHeaders: {
           ...config.headers,
-          Authorization: formattedToken
+          Authorization: formattedToken,
+          'x-auth-token': formattedToken.substring(7) // Also send raw token in x-auth-token header
         }
       });
 
+      // Set both headers for compatibility
       config.headers.Authorization = formattedToken;
+      config.headers['x-auth-token'] = formattedToken.substring(7); // Remove 'Bearer ' prefix
     } else {
       console.warn('API - Request - No token available for:', {
         url: config.url,

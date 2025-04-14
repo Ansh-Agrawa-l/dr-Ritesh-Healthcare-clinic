@@ -51,12 +51,17 @@ const MyAppointments = () => {
       console.log('MyAppointments - Raw appointment data:', response.data);
       
       const processedAppointments = response.data.map(appointment => {
-        console.log('Processing appointment:', appointment);
+        console.log('Processing appointment:', {
+          id: appointment._id,
+          rawStatus: appointment.status,
+          processedStatus: appointment.status?.toLowerCase() || 'pending',
+          canCancel: appointment.status?.toLowerCase() === 'pending' || appointment.status?.toLowerCase() === 'confirmed'
+        });
         return {
           ...appointment,
           status: appointment.status?.toLowerCase() || 'pending',
-          date: appointment.date || new Date().toISOString(),
-          time: appointment.time || 'Not specified'
+          date: appointment.appointmentDate || new Date().toISOString(),
+          time: appointment.timeSlot || 'Not specified'
         };
       });
 
@@ -141,9 +146,9 @@ const MyAppointments = () => {
     console.log('Checking if appointment can be cancelled:', {
       id: appointment._id,
       status: status,
-      canCancel: status === 'pending' || status === 'confirmed'
+      canCancel: status === 'scheduled' || status === 'confirmed'
     });
-    return status === 'pending' || status === 'confirmed';
+    return status === 'scheduled' || status === 'confirmed';
   };
 
   if (loading) {
